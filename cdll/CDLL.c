@@ -1,30 +1,15 @@
-/*Copyright (C) 
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- * 
- * 2022 - francisco dot rodriguez at ingenieria dot unam dot edu
- */
 
 
 #include "CDLL.h"
 
-static Node* new_node( int x )
-{
+static Node* new_song( char x, char y, int z  ) {
+
    Node* n = (Node*) malloc( sizeof( Node ) );
+   
    if( n != NULL ){
-      n->datos = x;
+      n->cancion->nombre = x;
+      n->cancion->autor = y;
+      n->cancion->duracion = z;
       n->next = NULL;
       n->prev = NULL;
    }
@@ -38,8 +23,7 @@ static Node* new_node( int x )
 // por CDLL_Find_if()
 //
 // Devuelve el nodo a la derecha del nodo recién eliminado.
-static Node* erase( CDLL* list, Node* pos )
-{
+static Node* erase( CDLL* list, Node* pos ) {
 
 }
 
@@ -49,8 +33,14 @@ static Node* erase( CDLL* list, Node* pos )
  * @return Una referencia a la nueva lista
  * @post Una lista existente en el heap
  */
-CDLL* CDLL_New()
-{
+CDLL* CDLL_New() {
+   CDLL* cdll=(CDLL*)malloc(sizeof(CDLL));
+	if(cdll)
+	{
+		cdll->last=cdll->first=cdll->cursor=NULL;
+		cdll->len=0;
+	}
+	return cdll;
 }
 
 /**
@@ -58,8 +48,11 @@ CDLL* CDLL_New()
  *
  * @param this Una lista.
  */
-void CDLL_Delete( CDLL** this )
-{
+void CDLL_Delete( CDLL** this ) {
+   assert( *this );
+   CDLL_MakeEmpty(*this);
+   free(*this);
+   *this=NULL;
 }
 
 /**
@@ -71,8 +64,25 @@ void CDLL_Delete( CDLL** this )
  * @post Coloca al cursor en el nuevo nodo
  *
  */
-void CDLL_Insert( CDLL* this, int item )
-{
+void CDLL_Insert( CDLL* this, int item ) {
+	assert(this);
+    Node* n=newNode(item);
+    if(n)
+    {
+        if(CDLL_IsEmpty(this))
+        {
+            CDLL_Push_front(this, item);
+        }else
+        {
+            Node* right=this->cursor->next;
+            this->cursor->next=n;
+            n->prev=this->cursor;
+            n->next=right;
+            right->prev=n;
+            this->cursor=n;
+        }
+        ++this->len;
+    }
 }
 
 /**
@@ -81,8 +91,24 @@ void CDLL_Insert( CDLL* this, int item )
  * @param this Una lista.
  * @param item El elemento a insertar
  */
-void CDLL_Push_front( CDLL* this, int item )
-{
+void CDLL_Push_front( CDLL* this, int item ) {
+   assert(this);
+	Node* n = new_node( item );
+	if(n)
+	{
+		if(this->first!=NULL)
+		{
+			n->next=this->first;
+			this->first->prev=n;
+			this->first=n;
+			this->last->next=this->first;
+			this->first->prev=this->last;
+		}
+		n->next=n;
+		n->prev=n;
+		this->first=this->last=this->cursor=n;
+	}
+	++this->len;
 }
 
 /**
@@ -96,13 +122,17 @@ void CDLL_Push_back( CDLL* this, int item )
    Node* n = new_node( item );
    assert( n );
 
-   if( this->first != NULL ){
-
+   if( this->first != NULL )
+   {
       this->last->next = n;
       n->prev = this->last;
       this->last = n;
+      this->last->next = this->first;
+      this->first->prev = this->last;
    } else{
       this->first = this->last = this->cursor = n;
+      this->last->next=n;
+      this->first->prev = n;
    }
    ++this->len;
 }
@@ -115,8 +145,23 @@ void CDLL_Push_back( CDLL* this, int item )
  * @post El cursor se mantiene en la posición en la que estaba cuando entró la
  * función.
  */
-void CDLL_Pop_front( CDLL* this )
-{
+void CDLL_Pop_front( CDLL* this ) {
+
+   assert( this->first );
+   if(this->len==1)
+   {
+       free(this->first);
+       this->first=this->last=this->cursor=NULL;
+       
+   }else
+   {
+         Node* right = this->first->next;
+       free( this->first );
+       this->first = right;
+       this->last->next=this->first;
+       this->first->prev=this->last->next;
+   }
+   --this->len;
 }
 
 /**
@@ -152,8 +197,10 @@ void CDLL_Pop_back( CDLL* this )
  *
  * @return El valor apuntado por el cursor
  */
-int CDLL_Cursor_Get( CDLL* this )
-{
+int CDLL_Cursor_Get( CDLL* this ) {
+
+   assert(this);
+   return this->cursor->cancion;
 }
 
 /**
@@ -171,8 +218,9 @@ void CDLL_Cursor_front( CDLL* this )
  *
  * @param this Una referencia a la lista de trabajo
  */
-void CDLL_Cursor_back( CDLL* this )
-{
+void CDLL_Cursor_back( CDLL* this ) {
+
+   this->cursor = this->last;
 }
 
 /**
@@ -180,8 +228,9 @@ void CDLL_Cursor_back( CDLL* this )
  *
  * @param this Una lista.
  */
-void CDLL_Cursor_next( CDLL* this )
-{
+void CDLL_Cursor_next( CDLL* this ) {
+
+   this->cursor = this->cursor->next;
 }
 
 /**
@@ -216,8 +265,9 @@ bool CDLL_IsEmpty( CDLL* this )
  *
  * @return Devuelve el número actual de elementos en la lista.
  */
-size_t CDLL_Len( CDLL* this )
-{
+size_t CDLL_Len( CDLL* this ) {
+
+   return this->len;
 }
 
 /**
@@ -225,8 +275,15 @@ size_t CDLL_Len( CDLL* this )
  *
  * @param this Una lista
  */
-void CDLL_MakeEmpty( CDLL* this )
-{
+void CDLL_MakeEmpty( CDLL* this ) {
+
+   assert(this);
+   while(this->first != NULL)
+   {
+        DLL_Pop_front(this);
+   }
+    this->first=this->last=this->cursor=NULL;
+    this->len=0;
 }
 
 /**
@@ -243,7 +300,7 @@ int CDLL_Front( CDLL* this )
    assert( this->first != NULL );
    // ERR: no se puede leer de una lista vacía
 
-   return this->first->datos;
+   return this->first->cancion;
 }
 
 /**
@@ -255,8 +312,9 @@ int CDLL_Front( CDLL* this )
  *
  * @pre La lista NO debe estar vacía
  */
-int CDLL_Back( CDLL* this )
-{
+int CDLL_Back( CDLL* this ) {
+   assert(this->last != NULL);
+   return this->last->cancion;
 }
 
 /**
@@ -265,8 +323,24 @@ int CDLL_Back( CDLL* this )
  * @param this Una lista.
  *
  */
-void CDLL_Erase( CDLL* this )
-{
+void CDLL_Erase( CDLL* this ) {
+
+   assert(this);
+   assert(this->len>0);
+   if(this->len>1) {
+
+        Node* right=this->cursor->next;
+        Node* left=this->cursor->prev;
+        free(this->cursor);
+        left->next=right;
+        right->prev=left;
+        this->cursor=right;
+    }else
+    {
+        free(this->cursor);
+        this->first=this->last=this->cursor=NULL;
+    }
+    --this->len;
 }
 
 /**
@@ -276,8 +350,29 @@ void CDLL_Erase( CDLL* this )
  * @param key  Valor buscado
  *
  */
-void CDLL_Remove( CDLL* this, int key )
-{
+void CDLL_Remove( CDLL* this, int key ) {
+
+   assert(this);
+   Node* it=this->first;
+   while(it!=this->last) {
+        if(it->cancion = key)
+        {
+            if(it=this->first)
+            {
+                DLL_Pop_front(this);
+            }
+            else if(it=this->last)
+            {    
+                DLL_Pop_back(this);
+            }else{
+                free(it);
+            }  
+            return;
+        }    
+   it=it->next;   
+   }
+
+
 }
 
 /**
@@ -303,7 +398,7 @@ bool CDLL_Find( CDLL* this, int key )
         this->cursor != NULL; 
         this->cursor = this->cursor->next )
    {
-      if( this->cursor->datos == key )
+      if( this->cursor->cancion == key )
       {
          return true;
       }
@@ -329,7 +424,7 @@ void CDLL_PrintStructure( CDLL* this )
       // usando un for en lugar de while (mi preferido):
       for( Node* it = this->first; it != NULL; it = it->next )
       {
-         fprintf( stderr, "(%d)->", it->datos );
+         fprintf( stderr, "(%d)->", it->cancion );
       } 
       fprintf( stderr, "Nil\n" );
    }
@@ -350,7 +445,7 @@ void CDLL_For_each( CDLL* this, void (*p_fn)( int item ) )
 {
    for( Node* it = this->first; it != NULL; it = it->next )
    {
-      p_fn( it->datos );
+      p_fn( it->cancion );
    }
 }
 
@@ -373,7 +468,7 @@ Node* CDLL_Find_if( CDLL* this, bool (*cmp)( int, int ), int key )
 
    while( it != NULL ){
 
-      if( cmp( it->datos, key ) == true ) break;
+      if( cmp( it->cancion, key ) == true ) break;
 
       it = it->next;
    }
@@ -402,7 +497,7 @@ size_t CDLL_Remove_if( CDLL* this, bool (*cmp)( int x, int y ), int key )
 
    while( it != NULL ){
 
-      if( cmp( it->datos, key ) == true ) 
+      if( cmp( it->cancion, key ) == true ) 
       {
          erase( this, it );
          ++elems;
@@ -413,5 +508,8 @@ size_t CDLL_Remove_if( CDLL* this, bool (*cmp)( int x, int y ), int key )
 
    return elems;
 }
+
+
+
 
 
