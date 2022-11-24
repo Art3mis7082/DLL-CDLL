@@ -14,9 +14,9 @@
 #include "defs.h"
 
 
-void Print( int item )
+void Print( int time, char name, char author )
 {
-	printf( "%d\n", item );
+	printf( "%d, %c, %c\n", time, name, author );
 }
 
 // función predicado:
