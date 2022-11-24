@@ -1,5 +1,3 @@
-
-
 #include "CDLL.h"
 
 static Node* new_song( char x, char y, int z  ) {
@@ -64,14 +62,14 @@ void CDLL_Delete( CDLL** this ) {
  * @post Coloca al cursor en el nuevo nodo
  *
  */
-void CDLL_Insert( CDLL* this, int item ) {
+void CDLL_Insert( CDLL* this, int time, char name, char author ) {
 	assert(this);
-    Node* n=newNode(item);
+    Node* n=newNode(time, name, author);
     if(n)
     {
         if(CDLL_IsEmpty(this))
         {
-            CDLL_Push_front(this, item);
+            CDLL_Push_front(this, time, name, author);
         }else
         {
             Node* right=this->cursor->next;
@@ -91,9 +89,9 @@ void CDLL_Insert( CDLL* this, int item ) {
  * @param this Una lista.
  * @param item El elemento a insertar
  */
-void CDLL_Push_front( CDLL* this, int item ) {
+void CDLL_Push_front( CDLL* this, int time, char name, char author ) {
    assert(this);
-	Node* n = new_node( item );
+	Node* n = new_song( time, name, author );
 	if(n)
 	{
 		if(this->first!=NULL)
@@ -117,9 +115,9 @@ void CDLL_Push_front( CDLL* this, int item ) {
  * @param this Una lista.
  * @param item El elemento a insertar
  */
-void CDLL_Push_back( CDLL* this, int item )
+void CDLL_Push_back( CDLL* this, int time, char name, char author )
 {
-   Node* n = new_node( item );
+   Node* n = new_song( time, name, author );
    assert( n );
 
    if( this->first != NULL )
@@ -441,11 +439,11 @@ void CDLL_PrintStructure( CDLL* this )
  * @param lista Una lista
  * @param p_fn Función que procesa cada elemento de la lista
  */
-void CDLL_For_each( CDLL* this, void (*p_fn)( int item ) )
+void CDLL_For_each( CDLL* this, void (*p_fn)( int time, char name, char author ) )
 {
    for( Node* it = this->first; it != NULL; it = it->next )
    {
-      p_fn( it->cancion );
+      p_fn( it->cancion->duracion, it->cancion->nombre, it->cancion->autor);
    }
 }
 
@@ -468,7 +466,7 @@ Node* CDLL_Find_if( CDLL* this, bool (*cmp)( int, int ), int key )
 
    while( it != NULL ){
 
-      if( cmp( it->cancion, key ) == true ) break;
+      if( cmp( it->cancion->duracion, it->cancion->nombre, it->cancion->autor, key ) == true ) break;
 
       it = it->next;
    }
@@ -497,7 +495,7 @@ size_t CDLL_Remove_if( CDLL* this, bool (*cmp)( int x, int y ), int key )
 
    while( it != NULL ){
 
-      if( cmp( it->cancion, key ) == true ) 
+      if( cmp( it->cancion->duracion, it->cancion->nombre, it->cancion->autor, key ) == true ) 
       {
          erase( this, it );
          ++elems;
@@ -508,6 +506,9 @@ size_t CDLL_Remove_if( CDLL* this, bool (*cmp)( int x, int y ), int key )
 
    return elems;
 }
+
+
+
 
 
 
